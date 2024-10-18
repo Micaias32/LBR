@@ -1,0 +1,4 @@
+fn principal() -> int32 {
+    val x = 7 + 3 * 0;
+    retorne x;
+}

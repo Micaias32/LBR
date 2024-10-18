@@ -1,0 +1,5 @@
+função fib(n: i64) -> i64 {
+    se (n == 0) retorne 0;
+    se (n == 1) retorne 1;
+    retorne fib(n-1) + fib(n-2);
+}
