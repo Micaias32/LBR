@@ -1,0 +1,3 @@
+inicio := fn {
+    escreval("Olá, Mundo!");
+}

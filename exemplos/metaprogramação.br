@@ -1,0 +1,20 @@
+use pdr;
+
+const Clonar = interface (T) {
+    @[em_linha]
+    const clone = fn (obj: &T) -> T;
+};
+@autoimpl (Clonar, est: Estrutura) {
+    @continue_se(
+        @campos_impl(est, Clonar),
+        @est_impl(Padrao),
+    );
+
+    est.clone = fn(&obj) -> est.tipo {
+        var novo = (est.tipo).padrao();
+        para (campo em est.campos) {
+             @campo(novo, campo) = @campo(novo, campo);
+        }
+        retorne novo;
+    }
+};

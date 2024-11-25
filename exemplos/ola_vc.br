@@ -1,0 +1,5 @@
+const inicio = fn () {
+    escreva("Qual o seu nome? ");
+    val nome = leial();
+    escreval(f"Olá, {nome}");
+}

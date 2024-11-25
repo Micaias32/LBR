@@ -1,0 +1,21 @@
+grammar_rules = _{ SOI ~ statement* ~ EOI }
+
+statement = _{ var_decl | function_call | expr ~ ";" }
+
+var_decl = _{ "val" ~ identifier ~ "=" ~ expr ~ ";" }
+
+function_call = _{ identifier ~ "(" ~ arguments? ~ ")" ~ ";" }
+
+expr = _{ term ~ (operator ~ term)* }
+
+term = _{ number | identifier | "(" ~ expr ~ ")" }
+
+arguments = _{ expr ~ ("," ~ expr)* }
+
+operator = _{ "+" | "-" | "*" | "/" }
+
+identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+
+number = @{ ASCII_DIGIT+ }
+
+WHITESPACE = _{ " " | "\t" | NEWLINE }

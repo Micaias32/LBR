@@ -1,0 +1,7 @@
+inicio := fn (argv: txt[]) {
+    se (argv.tam() < 2) {
+        escreval("Olá, Mundo!");
+    } senão {
+        escreval("Olá, ${argv[1]}!")
+    }
+}

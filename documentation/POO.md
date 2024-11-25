@@ -5,15 +5,16 @@ com algumas mudanças, que podem te ajudar a escrever código mais seguro e efic
 
 Exemplo:
 ```lbr
-classe Pessoa {
+const Pessoa = classe {
     nome: Texto;
     cpf: Texto;
     idade: u32;
     altura: f32;
+    mãe: &Pessoa;
 
-    fn comprimentar(&obj, comprimentado: Texto) {
+    comprimentar := fn (&obj, comprimentado: Texto) {
         escreval(f"{obj.nome} diz olá para {comprimentado}");
-    }
+    };
 
     construtor(nome: Texto, cpf: Texto, idade: u32, altura: f32) {
         retorne Pessoa {
@@ -23,12 +24,13 @@ classe Pessoa {
             altura: altura,
         };
     }
-}
+};
 
-fn inicio(args: [Texto]) {
+inicio := função (args: [Texto]) {
     val pessoa = Pessoa("Micaias", "000.000.000-00", 16, 1.70);
     pessoa.comprimentar("Felipe");
-}
+    se senão 
+};
 ```
 
 Por padrão qualquer classe criará automáticamente um construtor padrão. Esse
@@ -42,7 +44,7 @@ Você pode ter vários construtores para uma mesma classe. Desde que eles peçam
 parâmetros de tipos diferentes.
 
 ```lbr
-classe Pessoa {
+Pessoa := classe {
     ...
 
     construtor(nome: Texto, cpf: [u32; 4], idade: u32, altura: f32) {
@@ -54,14 +56,14 @@ classe Pessoa {
             altura: altura,
         };
     }
-}
+};
 ```
 
 Uma das coisas que os construtores do LBR tem a favor de outros, é que eles podem retornar
 opcionais e falháveis.
 
 ```lbr
-classe Pessoa {
+Pessoa := classe {
     ...
 
     construtor(nome: Texto, cpf: Texto, idade: u32, altura: f32) ! {
@@ -76,9 +78,9 @@ classe Pessoa {
             };
         }
     }
-}
+};
 
-classe U32NaoZero {
+U32NaoZero := classe {
     n: u32;
 
     construtor(n: u32) ? {
@@ -90,5 +92,5 @@ classe U32NaoZero {
             };
         }
     }
-}
+};
 ```
