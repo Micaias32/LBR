@@ -1,97 +1,159 @@
-use std::{collections::HashSet, rc::Rc};
-
-use crate::parser::*;
 use pest::{error::Error, iterators::Pair, Parser};
 
-pub struct Ast {
-    nodes: Vec<Node>,
-    idents: HashSet<Rc<str>>,
+use crate::parser::{LbrParser, Rule};
+
+#[derive(Debug, Clone, Hash, PartialEq, PartialOrd)]
+pub struct AST {
+    statements: Vec<Statement>,
+}
+impl AST {
+    pub fn new(source: &str) -> Result<Self, Box<Error<Rule>>> {
+        let pairs = LbrParser::parse(Rule::grammar_rules, source)?
+            .next()
+            .expect("infallible")
+            .into_inner();
+
+        let mut statements = vec![];
+
+        for pair in pairs {
+            if pair.as_rule() == Rule::EOI {
+                break;
+            }
+            let statement = Statement::from_pair(pair);
+            statements.push(statement);
+        }
+
+        Ok(Self { statements })
+    }
 }
 
-pub enum Node {
-    Assignment {
-        ident: Rc<str>,
-        assignee: Box<Node>,
-    },
+#[derive(Debug, Clone, Hash, PartialEq, PartialOrd)]
+pub enum Statement {
     Declaration {
-        ident: Rc<str>,
-        assignee: Box<Node>,
-        mutability: Mutability,
+        ident: Ident,
+        value: Expression,
     },
     FunctionCall {
-        ident: Rc<str>,
-        arguments: Vec<Node>,
+        func_ident: Ident,
+        args: Vec<Expression>,
     },
+    Expression(Expression),
+}
+impl Statement {
+    fn from_pair(pair: Pair<Rule>) -> Statement {
+        let statement = pair.into_inner().next().expect("infallible");
+
+        match statement.as_rule() {
+            Rule::declaration => Statement::from_declaration(statement),
+            Rule::function_call => Statement::from_func_call(statement),
+            Rule::expr => Statement::Expression(Expression::from_pair(statement)),
+            _ => unreachable!("infallible"),
+        }
+    }
+
+    fn from_func_call(pair: Pair<Rule>) -> Statement {
+        let pairs: Vec<_> = pair.into_inner().collect();
+        let (ident, arguments) = (&pairs[0], pairs.get(1).cloned());
+        let mut args: Vec<_> = Vec::new();
+        if let Some(arguments) = arguments {
+            args = arguments
+                .into_inner()
+                .map(|pair| Expression::from_pair(pair))
+                .collect();
+        }
+        Statement::FunctionCall {
+            func_ident: Ident {
+                name: ident.as_str().into(),
+            },
+            args,
+        }
+    }
+
+    fn from_declaration(pair: Pair<Rule>) -> Statement {
+        let pairs: Vec<_> = pair.into_inner().collect();
+
+        let (ident, value) = (
+            Ident {
+                name: pairs[0].as_str().into(),
+            },
+            Expression::from_pair(pairs[1].to_owned()),
+        );
+
+        Statement::Declaration { ident, value }
+    }
+}
+
+#[derive(Debug, Clone, Hash, PartialEq, PartialOrd)]
+pub enum Expression {
     UnaryExpr {
-        operator: MathOperator,
-        term: Box<Node>,
+        term: Box<Expression>,
+        operator: Option<Operator>,
     },
     BinaryExpr {
-        lhs: Box<Node>,
-        operator: MathOperator,
-        rhs: Box<Node>,
+        lhs: Box<Expression>,
+        operator: Operator,
+        rhs: Box<Expression>,
+    },
+    NumberLiteral {
+        val: String,
+    },
+    Identifier {
+        ident: Ident,
     },
 }
+impl Expression {
+    fn from_pair(pair: Pair<Rule>) -> Expression {
+        let expr = pair.into_inner();
 
-pub enum Mutability {
-    Constant,
-    Value,
-    Variable,
+        let expr: Vec<_> = expr.collect();
+
+        let term1 = Expression::from_term(expr[0].to_owned());
+        if let Some(rule) = expr.get(1..=2) {
+            let operator = match rule[0].as_str() {
+                "+" => Operator::Plus,
+                "-" => Operator::Minus,
+                "*" => Operator::Multiply,
+                "/" => Operator::Divide,
+                _ => unreachable!("infallible"),
+            };
+            let term2 = Expression::from_term(rule[1].to_owned());
+
+            Expression::BinaryExpr {
+                lhs: term1.into(),
+                operator,
+                rhs: term2.into(),
+            }
+        } else {
+            term1
+        }
+    }
+
+    fn from_term(pair: Pair<Rule>) -> Expression {
+        let pair = pair.into_inner().next().expect("infallible");
+        match pair.as_rule() {
+            Rule::number => Expression::NumberLiteral {
+                val: pair.as_str().into(),
+            },
+            Rule::identifier => Expression::Identifier {
+                ident: Ident {
+                    name: pair.as_str().into(),
+                },
+            },
+            Rule::expr => Expression::from_pair(pair),
+            _ => unreachable!("infallible"),
+        }
+    }
 }
 
-pub enum MathOperator {
+#[derive(Debug, Clone, Hash, PartialEq, PartialOrd)]
+pub enum Operator {
     Plus,
     Minus,
     Multiply,
     Divide,
 }
 
-impl Default for Ast {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Ast {
-    pub fn new() -> Self {
-        Self {
-            nodes: vec![],
-            idents: HashSet::new(),
-        }
-    }
-
-    pub fn parse(&mut self, source: &str) -> Result<(), Box<Error<Rule>>> {
-        let mut nodes = vec![];
-
-        let pairs = match LbrParser::parse(Rule::grammar_rules, source) {
-            Ok(p) => p,
-            Err(e) => return Err(e.into()),
-        };
-
-        for pair in pairs {
-            if let Rule::statement = pair.as_rule() {
-                let node = self.get_node_from_statement(pair);
-                nodes.push(node);
-            }
-        }
-
-        Ok(())
-    }
-
-    fn get_node_from_statement(&mut self, pair: Pair<Rule>) -> Node {
-        let nested = pair.into_inner().next().unwrap();
-        match (nested.as_rule(), nested) {
-            (Rule::function_call, pair) => self.get_function_call(pair),
-            (Rule::var_decl, pair) => self.get_val_declaration(pair),
-            _ => unreachable!(),
-        }
-    }
-
-    fn get_function_call(&mut self, pair: Pair<Rule>) -> Node {
-        let pairs = pair.into_inner();
-    }
-
-    fn get_val_declaration(&self, pair: Pair<Rule>) -> Node {
-        todo!()
-    }
+#[derive(Debug, Clone, Hash, PartialEq, PartialOrd)]
+pub struct Ident {
+    name: String,
 }

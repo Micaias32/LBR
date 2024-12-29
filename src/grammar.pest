@@ -1,18 +1,18 @@
-grammar_rules = _{ SOI ~ statement* ~ EOI }
+grammar_rules = { SOI ~ statement* ~ EOI }
 
-statement = _{ var_decl | function_call | expr ~ ";" }
+statement = { declaration | function_call | expr ~ ";" }
 
-var_decl = _{ "val" ~ identifier ~ "=" ~ expr ~ ";" }
+declaration = { "val" ~ identifier ~ "=" ~ expr ~ ";" }
 
-function_call = _{ identifier ~ "(" ~ arguments? ~ ")" ~ ";" }
+function_call = { identifier ~ "(" ~ arguments? ~ ")" ~ ";" }
 
-expr = _{ term ~ (operator ~ term)* }
+expr = { term ~ (operator ~ term)* }
 
-term = _{ number | identifier | "(" ~ expr ~ ")" }
+term = { number | identifier | "(" ~ expr ~ ")" }
 
-arguments = _{ expr ~ ("," ~ expr)* }
+arguments = { expr ~ ("," ~ expr)* }
 
-operator = _{ "+" | "-" | "*" | "/" }
+operator = { "+" | "-" | "*" | "/" }
 
 identifier = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 

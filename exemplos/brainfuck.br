@@ -1,0 +1,39 @@
+const Brainfuck = estrurura {
+    codigo: &[char],
+    ponteiro_codigo: num_pdr,
+    ponteiro: num_pdr,
+    fita: [num_8, 30_000],
+    loops: HashMap<num_pdr, num_pdr>,
+};
+
+const criar_programa = fn (codigo: &[char]) -> Brainfuck {
+    retorne Brainfuck {
+        ponteiro = 0,
+        codigo = codigo,
+        ponteiro_codigo = 0,
+        loops = criar_HashMap(),
+    };
+};
+
+const rodar_brainfuck = fn (obj: &Brainfuck) {
+    enquanto (obj.ponteiro_codigo < obj.codigo.tam) {
+        val instruc = obj.codigo[obj.ponteiro_codigo];
+        se         (instruc == '+') {
+            obj.fita[obj.ponteiro]++;
+        } senao se (instruc == '-') {
+            obj.fita[obj.ponteiro]--;
+        } senao se (instruc == '>') {
+            obj.ponteiro++;
+        } senao se (instruc == '<') {
+            obj.ponteiro--;
+        } senao se (instruc == ',') {
+            obj.fita[obj.ponteiro] = leia_char();
+        } senao se (instruc == '.') {
+            escreva(f"{obj.fita[obj.ponteiro]}")
+        } senao se (instruc == '[') {
+            // todo!
+        } senao se (instruc == ']') {
+            // todo!
+        }
+    }
+}
